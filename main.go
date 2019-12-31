@@ -139,6 +139,33 @@ func getSelectedAccount() ConfigAccount {
 
 }
 
+func proceedWithProfile() {
+
+	var cont bool
+
+	if (getSelectedAccount() == ConfigAccount{}) {
+
+		fmt.Fprintln(color.Output, color.HiRedString("! Please select an account using `contenu select <username@domain>`"))
+		return
+
+	}
+
+	survey.AskOne(&survey.Confirm{
+
+		Message: "Do you want to proceed with the selected account?",
+	}, &cont, survey.WithValidator(survey.Required))
+
+	if !cont {
+
+		fmt.Fprintln(color.Output, color.HiRedString("! Exiting ContenuCLI"))
+		return
+
+	}
+	
+	os.Exit(0)
+
+}
+
 func main() {
 
 	if fileExists(dotContenu) {
@@ -169,11 +196,11 @@ func main() {
 
 			if (getSelectedAccount() == ConfigAccount{}) {
 
-				fmt.Fprintln(color.Output, color.HiCyanString("(*) ContenuCLI v%s | No account selected", context.App.Version))
+				fmt.Fprintln(color.Output, color.HiCyanString("* ContenuCLI v%s | No account selected", context.App.Version))
 
 			} else {
 
-				fmt.Fprintln(color.Output, color.HiCyanString("(*) ContenuCLI v%s | %s@%s", context.App.Version, getSelectedAccount().Username, getSelectedAccount().Domain))
+				fmt.Fprintln(color.Output, color.HiCyanString("* ContenuCLI v%s | %s@%s", context.App.Version, getSelectedAccount().Username, getSelectedAccount().Domain))
 
 			}
 
@@ -183,19 +210,23 @@ func main() {
 
 				if (account == ConfigAccount{}) {
 
-					fmt.Fprintln(color.Output, color.HiRedString("(!) Could not select account"))
+					fmt.Fprintln(color.Output, color.HiRedString("! Could not select account"))
 
 				} else {
 
-					fmt.Fprintln(color.Output, color.HiGreenString("(*) Account %s %s", color.HiWhiteString("%s@%s", account.Username, account.Domain), color.HiGreenString("selected!")))
+					fmt.Fprintln(color.Output, color.HiGreenString("* Account %s %s", color.HiWhiteString("%s@%s", account.Username, account.Domain), color.HiGreenString("selected!")))
 					config.SelectedAccount = context.Args().Get(1)
 					saveConfig()
 
 				}
 
+			} else if context.Args().Get(0) == "pull" {
+
+				proceedWithProfile()
+
 			} else if context.Args().Get(0) == "login" && context.Args().Get(1) != "" {
 
-				fmt.Fprintln(color.Output, color.HiCyanString("(*) Initiating login procedure for domain %s%s", color.HiWhiteString(context.Args().Get(1)), color.HiCyanString("...")))
+				fmt.Fprintln(color.Output, color.HiCyanString("* Initiating login procedure for domain %s%s", color.HiWhiteString(context.Args().Get(1)), color.HiCyanString("...")))
 
 				var username, password string
 
@@ -213,11 +244,11 @@ func main() {
 
 				if loginOutput == "" {
 
-					fmt.Fprintln(color.Output, color.HiRedString("(!) Invalid credentials"))
+					fmt.Fprintln(color.Output, color.HiRedString("! Invalid credentials"))
 
 				} else {
 
-					fmt.Fprintln(color.Output, color.HiGreenString("(*) Added account to .contenu file!"))
+					fmt.Fprintln(color.Output, color.HiGreenString("* Added account to .contenu file!"))
 
 					config.Accounts = append(config.Accounts, ConfigAccount{
 
@@ -231,7 +262,7 @@ func main() {
 
 			} else {
 
-				fmt.Fprintln(color.Output, color.HiRedString("(!) Invalid command"))
+				fmt.Fprintln(color.Output, color.HiRedString("! Invalid command"))
 
 			}
 
