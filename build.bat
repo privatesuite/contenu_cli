@@ -1,1 +1,1 @@
-go build -o bin/contenu.exe main.go
+go build -ldflags="-s -w" -o bin/contenu.exe main.go
