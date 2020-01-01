@@ -34,6 +34,7 @@ type ConfigFile struct {
 }
 
 type ProjectConfig struct {
+	Domain string
 	Repository string
 }
 
@@ -182,9 +183,30 @@ func getAccount(account string) ConfigAccount {
 
 }
 
+var ignoreProjectDomain bool
 func getSelectedAccount() ConfigAccount {
 
-	return getAccount(config.SelectedAccount)
+	if project.Domain != "" && !ignoreProjectDomain {
+
+		for _, acc := range config.Accounts {
+			
+			if acc.Domain == project.Domain {
+
+				return acc
+
+			}
+
+		}
+
+		fmt.Fprintln(color.Output, color.HiRedString("! Could not find account for domain %s", color.HiWhiteString(project.Domain)))
+		os.Exit(0)
+		return ConfigAccount{}
+
+	} else {
+
+		return getAccount(config.SelectedAccount)
+
+	}
 
 }
 
@@ -266,12 +288,21 @@ func main() {
 			cli.BoolFlag{
 
 				Name: "force",
-				Usage: "Bypass account confirmation",
+				Usage: "bypasses account confirmation",
+
+			},
+
+			cli.BoolFlag{
+
+				Name: "ignore-project-domain",
+				Usage: "ignores the account domain specified in `contenu.json`",
 
 			},
 
 		},
 		Action: func(context *cli.Context) error {
+
+			ignoreProjectDomain = context.Bool("ignore-project-domain")
 
 			if (getSelectedAccount() == ConfigAccount{}) {
 
@@ -279,7 +310,19 @@ func main() {
 
 			} else {
 
-				fmt.Fprintln(color.Output, color.HiCyanString("* ContenuCLI v%s | %s@%s", context.App.Version, getSelectedAccount().Username, getSelectedAccount().Domain))
+				var detail string
+
+				if project.Domain != "" && !ignoreProjectDomain {
+
+					detail = " (project)"
+
+				} else {
+					
+					detail = ""
+
+				}
+
+				fmt.Fprintln(color.Output, color.HiCyanString("* ContenuCLI v%s | %s@%s%s", context.App.Version, getSelectedAccount().Username, getSelectedAccount().Domain, detail))
 
 			}
 
