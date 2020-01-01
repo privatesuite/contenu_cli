@@ -19,6 +19,9 @@ import (
 var home, _ = os.UserHomeDir()
 var dotContenu = filepath.Join(home, ".contenu")
 
+var cwd, _ = os.Getwd()
+var contenuJSON = filepath.Join(cwd, "contenu.json")
+
 type ConfigAccount struct {
 	Domain   string
 	Username string
@@ -30,7 +33,12 @@ type ConfigFile struct {
 	Accounts        []ConfigAccount
 }
 
+type ProjectConfig struct {
+	Repository string
+}
+
 var config ConfigFile
+var project ProjectConfig
 
 func fileExists(filename string) bool {
 
@@ -62,6 +70,12 @@ func saveConfig() {
 	}
 
 }
+
+// func readDirConfig() {
+
+// 	filepath.Join(home, ".contenu")
+
+// }
 
 func login(domain string, username string, password string) string {
 
@@ -174,7 +188,7 @@ func getSelectedAccount() ConfigAccount {
 
 }
 
-func proceedWithProfile() {
+func proceedWithProfile(force bool) {
 
 	var cont bool
 
@@ -185,15 +199,19 @@ func proceedWithProfile() {
 
 	}
 
-	survey.AskOne(&survey.Confirm{
+	if !force {
 
-		Message: "Do you want to proceed with the selected account?",
-	}, &cont, survey.WithValidator(survey.Required))
+		survey.AskOne(&survey.Confirm{
 
-	if !cont {
+			Message: "Do you want to proceed with the selected account?",
+		}, &cont, survey.WithValidator(survey.Required))
 
-		fmt.Fprintln(color.Output, color.HiRedString("! Exiting ContenuCLI"))
-		os.Exit(0)
+		if !cont {
+
+			fmt.Fprintln(color.Output, color.HiRedString("! Exiting ContenuCLI"))
+			os.Exit(0)
+
+		}
 
 	}
 
@@ -218,6 +236,24 @@ func main() {
 
 	}
 
+	
+	if fileExists(contenuJSON) {
+
+		data, err := ioutil.ReadFile(contenuJSON)
+		if err != nil {
+
+			log.Fatalln(err)
+
+		}
+
+		json.Unmarshal(data, &project)
+
+	} else {
+
+		project = ProjectConfig{}
+
+	}
+
 	saveConfig()
 
 	app := &cli.App{
@@ -225,6 +261,16 @@ func main() {
 		Name:    "contenu",
 		Usage:   "Interact with a Contenu CMS instance",
 		Version: "1.0.0",
+		Flags: []cli.Flag{
+
+			cli.BoolFlag{
+
+				Name: "force",
+				Usage: "Bypass account confirmation",
+
+			},
+
+		},
 		Action: func(context *cli.Context) error {
 
 			if (getSelectedAccount() == ConfigAccount{}) {
@@ -253,43 +299,65 @@ func main() {
 
 				}
 
-			} else if context.Args().Get(0) == "pull" {
+			} else if context.Args().Get(0) == "push" {
 
-				proceedWithProfile()
+				proceedWithProfile(context.Bool("force"))
+
+				var repo string
 
 				if context.Args().Get(1) != "" {
 
-					var branch string
-
-					if context.String("branch") != "" {
-
-						branch = context.String("branch")
-
-					} else if context.String("tag") != "" {
-
-						branch = context.String("tag")
-
-					} else {
-
-						branch = "master"
-
-					}
-
-					cloneOutput := clone(getSelectedAccount(), context.Args().Get(1), branch)
-
-					if cloneOutput {
-
-						fmt.Fprintln(color.Output, color.HiGreenString("* Pull succesfull!"))
-
-					} else {
-
-						fmt.Fprintln(color.Output, color.HiRedString("! Pull failed"))
-
-					}
+					repo = context.Args().Get(1)
 
 				} else {
 
-					fmt.Fprintln(color.Output, color.HiRedString("! Not implemented"))
+					if (project != ProjectConfig{}) {
+
+						if project.Repository != "" {
+
+							repo = project.Repository
+
+						} else {
+
+							fmt.Fprintln(color.Output, color.HiRedString("! Repository not specified in `contenu.json`"))
+							return nil
+
+						}
+
+					} else {
+					
+						fmt.Fprintln(color.Output, color.HiRedString("! `contenu.json` not found"))
+						return nil
+
+					}
+
+				}
+
+				var branch string
+
+				if context.String("branch") != "" {
+
+					branch = context.String("branch")
+
+				} else if context.String("tag") != "" {
+
+					branch = context.String("tag")
+
+				} else {
+
+					branch = "master"
+
+				}
+
+				cloneOutput := clone(getSelectedAccount(), repo, branch)
+
+				if cloneOutput {
+
+					fmt.Fprintln(color.Output, color.HiGreenString("* Push succesfull!"))
+
+				} else {
+
+					fmt.Fprintln(color.Output, color.HiRedString("! Push failed"))
 
 				}
 

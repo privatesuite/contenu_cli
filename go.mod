@@ -7,5 +7,6 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/logrusorgru/aurora v0.0.0-20191116043053-66b7ad493a23
 	github.com/urfave/cli v1.22.2
+	github.com/urfave/cli/v2 v2.1.1
 	golang.org/x/tools/gopls v0.2.2 // indirect
 )
