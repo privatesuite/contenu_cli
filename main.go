@@ -287,15 +287,15 @@ func main() {
 
 			cli.BoolFlag{
 
-				Name: "force",
+				Name: "force, f",
 				Usage: "bypasses account confirmation",
 
 			},
 
 			cli.BoolFlag{
 
-				Name: "ignore-project-domain",
-				Usage: "ignores the account domain specified in `contenu.json`",
+				Name: "ignore-project-domain, i",
+				Usage: "ignores the account domain specified in contenu.json",
 
 			},
 
