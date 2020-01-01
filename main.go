@@ -160,7 +160,17 @@ func getAccount(account string) ConfigAccount {
 
 	split := strings.Split(account, "@")
 
-	if len(split) != 2 {
+	if len(split) == 1 {
+
+		for _, acc := range config.Accounts {
+
+			if strings.Contains(acc.Domain, split[0]) {
+	
+				return acc
+	
+			}
+	
+		}
 
 		return ConfigAccount{}
 
@@ -171,7 +181,7 @@ func getAccount(account string) ConfigAccount {
 
 	for _, acc := range config.Accounts {
 
-		if acc.Username == username && strings.Contains(acc.Domain, domain) {
+		if strings.Contains(acc.Username, username) && strings.Contains(acc.Domain, domain) {
 
 			return acc
 
