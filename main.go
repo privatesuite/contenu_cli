@@ -106,6 +106,41 @@ func login(domain string, username string, password string) string {
 
 }
 
+func clone(account ConfigAccount, url string, branch string) bool {
+
+	message := map[string]interface{}{
+
+		"url": url,
+		"branch": branch,
+	}
+
+	bytesRepresentation, err := json.Marshal(message)
+	if err != nil {
+
+		log.Fatalln(err)
+
+	}
+
+	resp, err := http.Post(fmt.Sprintf("https://%s/api/clone?token=%s", account.Domain, account.Token), "application/json", bytes.NewBuffer(bytesRepresentation))
+	if err != nil {
+
+		log.Fatalln(err)
+
+	}
+
+	var result map[string]interface{}
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+
+		log.Fatalln(err)
+
+	}
+
+	return result["message"].(string) == "success"
+
+}
+
 func getAccount(account string) ConfigAccount {
 
 	split := strings.Split(account, "@")
@@ -158,11 +193,9 @@ func proceedWithProfile() {
 	if !cont {
 
 		fmt.Fprintln(color.Output, color.HiRedString("! Exiting ContenuCLI"))
-		return
+		os.Exit(0)
 
 	}
-	
-	os.Exit(0)
 
 }
 
@@ -223,6 +256,42 @@ func main() {
 			} else if context.Args().Get(0) == "pull" {
 
 				proceedWithProfile()
+
+				if context.Args().Get(1) != "" {
+
+					var branch string
+
+					if context.String("branch") != "" {
+
+						branch = context.String("branch")
+
+					} else if context.String("tag") != "" {
+
+						branch = context.String("tag")
+
+					} else {
+
+						branch = "master"
+
+					}
+
+					cloneOutput := clone(getSelectedAccount(), context.Args().Get(1), branch)
+
+					if cloneOutput {
+
+						fmt.Fprintln(color.Output, color.HiGreenString("* Pull succesfull!"))
+
+					} else {
+
+						fmt.Fprintln(color.Output, color.HiRedString("! Pull failed"))
+
+					}
+
+				} else {
+
+					fmt.Fprintln(color.Output, color.HiRedString("! Not implemented"))
+
+				}
 
 			} else if context.Args().Get(0) == "login" && context.Args().Get(1) != "" {
 
